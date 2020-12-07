@@ -5,12 +5,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.math.BigDecimal;
 
-import org.axe.interface_.mvc.Timer;
+import org.axe.extra.timer.TimerTask;
 
 /**
  * Cpu温度定时检测
  */
-public final class CpuTempTimer implements Timer{
+public final class CpuTempTimer extends TimerTask{
 	
 	private String temp = "0.0";
 	
@@ -20,19 +20,6 @@ public final class CpuTempTimer implements Timer{
 	
 	public CpuTempTimer() {
 		
-	}
-
-	private Integer timer = 10;//axe的定时器时间片是100毫秒，所以10个时间片1周期
-	@Override
-	public boolean canExecuteNow() {
-		//1秒1次
-		if(timer>0){
-			timer--;
-			return false;
-		}else{
-			timer = 10;
-			return true;
-		}
 	}
 
 	@Override
@@ -53,6 +40,11 @@ public final class CpuTempTimer implements Timer{
 	@Override
 	public String name() {
 		return "CPU温度定时";
+	}
+
+	@Override
+	public int timeSec() {
+		return 1;
 	}
 	
 }

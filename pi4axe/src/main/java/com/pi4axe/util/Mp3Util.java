@@ -55,7 +55,7 @@ public final class Mp3Util {
 			try {
 				tpbc.addTaskPack(new TaskPack(filePath) {
 					@Override
-					public void task(SerialExecutor serialexecutor) {
+					public boolean task(SerialExecutor serialexecutor) {
 						try {
 							File file = new File(this.getName());
 							if(!file.exists()){
@@ -87,6 +87,7 @@ public final class Mp3Util {
 						} catch (Exception e) {
 							LogUtil.error(e);
 						}
+						return false;
 					}
 				});
 			} catch (Exception e) {
