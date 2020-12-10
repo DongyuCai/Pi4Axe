@@ -1,14 +1,14 @@
-package com.pi4axe.component.PN532;
-public class PN532 {
+package com.pi4axe.component.PN532I2C;
+public class PN532I2C {
 
 	static final byte PN532_COMMAND_GETFIRMWAREVERSION = 0x02;
 	static final byte PN532_COMMAND_SAMCONFIGURATION = 0x14;
 	static final byte PN532_COMMAND_INLISTPASSIVETARGET = 0x4A;
 
-	private IPN532Interface medium;
+	private PN532I2CMedium medium;
 	private byte[] pn532_packetbuffer;
 
-	public PN532(IPN532Interface medium) {
+	public PN532I2C(PN532I2CMedium medium) {
 		this.medium = medium;
 		this.pn532_packetbuffer = new byte[64];
 	}
