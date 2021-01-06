@@ -212,15 +212,19 @@ public final class PN532I2CMedium {
 		byte sum = PN532_PN532TOHOST;
 		sum += cmd;
 
-		for (int i = 0; i < length; i++) {
+		for (int i = 0; i < length && ind<response.length; i++) {
 			buffer[i] = response[ind++];
 			sum += buffer[i];
 		}
 
-		byte checksum = response[ind++];
+		if(ind>=response.length){
+			log("pn532i2c.readResponse bad checksum err 1");
+			return -1;
+		}
+		byte checksum = response[ind];
 		checksum += sum;
 		if (0 != checksum) {
-			log("pn532i2c.readResponse bad checksum");
+			log("pn532i2c.readResponse bad checksum err 2");
 			return -1;
 		}
 
