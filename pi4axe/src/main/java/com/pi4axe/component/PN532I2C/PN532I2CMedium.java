@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.axe.util.LogUtil;
 
+import com.pi4axe.util.I2CBusLockUtil;
 import com.pi4j.io.i2c.I2CBus;
 import com.pi4j.io.i2c.I2CDevice;
 import com.pi4j.io.i2c.I2CFactory;
@@ -94,11 +95,14 @@ public final class PN532I2CMedium {
 				bytesToSend[i] = toSend.get(i);
 			}
 			log("pn532i2c.writeCommand sending " + getByteString(bytesToSend));
+			I2CBusLockUtil.lock();
 			i2cDevice.write(DEVICE_ADDRESS, bytesToSend, 0, bytesToSend.length);
 
 		} catch (IOException e) {
 			LogUtil.error(e);
 			return CommandStatus.INVALID_ACK;
+		} finally {
+			I2CBusLockUtil.unlock();
 		}
 		log("pn532i2c.writeCommand transferring to waitForAck())");
 		return waitForAck(5000);
@@ -113,26 +117,33 @@ public final class PN532I2CMedium {
 
 		int timer = 0;
 		String message = "";
-		while (true) {
-			try {
-				i2cDevice.read(ackbuff, 0, 7);
-			} catch (IOException e) {
-				message = e.getMessage();
-			}
 
-			if ((ackbuff[0] & 1) > 0) {
-				break;
-			}
-
-			if (timeout != 0) {
-				timer += 10;
-				if (timer > timeout) {
-					log("pn532i2c.waitForAck timeout occured: " + message);
-					return CommandStatus.TIMEOUT;
+		try {
+			I2CBusLockUtil.lock();
+			while (true) {
+				try {
+					i2cDevice.read(ackbuff, 0, 7);
+				} catch (IOException e) {
+					message = e.getMessage();
 				}
-			}
-			Gpio.delay(10);
 
+				if ((ackbuff[0] & 1) > 0) {
+					break;
+				}
+
+				if (timeout != 0) {
+					timer += 10;
+					if (timer > timeout) {
+						log("pn532i2c.waitForAck timeout occured: " + message);
+						return CommandStatus.TIMEOUT;
+					}
+				}
+				Gpio.delay(10);
+			}
+		} catch (Exception e) {
+			LogUtil.error(e);
+		} finally {
+			I2CBusLockUtil.unlock();
 		}
 
 		for (int i = 1; i < ackbuff.length; i++) {
@@ -157,26 +168,32 @@ public final class PN532I2CMedium {
 
 		int timer = 0;
 
-		while (true) {
-			try {
-				i2cDevice.read(response, 0, expectedLength + 2);
-			} catch (IOException e) {
-				// Nothing, timeout will occur if an error has happened.
-			}
-
-			if ((response[0] & 1) > 0) {
-				break;
-			}
-
-			if (timeout != 0) {
-				timer += 10;
-				if (timer > timeout) {
-					log("pn532i2c.readResponse timeout occured.");
-					return -1;
+		try {
+			I2CBusLockUtil.lock();
+			while (true) {
+				try {
+					i2cDevice.read(response, 0, expectedLength + 2);
+				} catch (IOException e) {
+					// Nothing, timeout will occur if an error has happened.
 				}
-			}
-			Gpio.delay(10);
 
+				if ((response[0] & 1) > 0) {
+					break;
+				}
+
+				if (timeout != 0) {
+					timer += 10;
+					if (timer > timeout) {
+						log("pn532i2c.readResponse timeout occured.");
+						return -1;
+					}
+				}
+				Gpio.delay(10);
+			}
+		} catch (Exception e) {
+			LogUtil.error(e);
+		} finally {
+			I2CBusLockUtil.unlock();
 		}
 
 		int ind = 1;
@@ -212,12 +229,12 @@ public final class PN532I2CMedium {
 		byte sum = PN532_PN532TOHOST;
 		sum += cmd;
 
-		for (int i = 0; i < length && ind<response.length; i++) {
+		for (int i = 0; i < length && ind < response.length; i++) {
 			buffer[i] = response[ind++];
 			sum += buffer[i];
 		}
 
-		if(ind>=response.length){
+		if (ind >= response.length) {
 			log("pn532i2c.readResponse bad checksum err 1");
 			return -1;
 		}
